@@ -7,11 +7,14 @@
 #define CANVAS_WIDTH 240
 #define CANVAS_HEIGHT 136
 
-#define BODY_WIDTH 10   // in pixels
-#define BODY_HEIGHT 10  // in pixels
+#define CELL_WIDTH 10   // in pixels
+#define CELL_HEIGHT 10  // in pixels
 
-const int FIELD_WIDTH = CANVAS_WIDTH / BODY_WIDTH;
-const int FIELD_HEIGHT = CANVAS_HEIGHT / BODY_HEIGHT;
+const int EAT_WIDTH = 6;
+const int EAT_HEIGHT = 6;
+
+const int FIELD_WIDTH = CANVAS_WIDTH / CELL_WIDTH;
+const int FIELD_HEIGHT = CANVAS_HEIGHT / CELL_HEIGHT;
 
 const Vector2 ZERO_VEC = {0, 0};
 
@@ -28,8 +31,16 @@ typedef struct Snake_ {
   int pos_y;
   float speed;                 // in seconds till next movement
   float last_step_updated_at;  // time since last step update
+  bool has_eaten;
 } Snake;
 
+typedef struct Food_ {
+  int x;
+  int y;
+} Food;
+
+Food food = {-1, -1};
+// Eat eat_super = {-1, -1};
 SnakeNode snake_body[FIELD_WIDTH][FIELD_HEIGHT];
 Snake snake = {.dir_x = 1,
                .dir_y = 0,
@@ -37,7 +48,8 @@ Snake snake = {.dir_x = 1,
                .pos_x = FIELD_WIDTH / 2,
                .pos_y = FIELD_HEIGHT / 2,
                .speed = 0.2f,
-               .last_step_updated_at = 0};
+               .last_step_updated_at = 0,
+               .has_eaten = false};
 
 void InitSnake() {
   for (int i = 0; i < snake.length; i++) {
@@ -45,6 +57,18 @@ void InitSnake() {
     int y = snake.pos_y - snake.dir_y * i;
     snake_body[x][y].lifetime = snake.length - i;
   }
+}
+
+void SpawnFood() {
+  // TODO: replace with deterministic way
+  int x;
+  int y;
+  do {
+    x = GetRandomValue(0, FIELD_WIDTH - 1);
+    y = GetRandomValue(0, FIELD_HEIGHT - 1);
+  } while (snake_body[x][y].lifetime > 0);
+  food.x = x;
+  food.y = y;
 }
 
 void Setup() {
@@ -56,16 +80,17 @@ void Setup() {
   }
 
   InitSnake();
+  SpawnFood();
 }
 
 void DrawSnakeBody(int i, int j) {
-  DrawRectangle(i * BODY_WIDTH, j * BODY_HEIGHT, BODY_WIDTH, BODY_HEIGHT,
+  DrawRectangle(i * CELL_WIDTH, j * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT,
                 DARKBROWN);
 }
 
 void DrawSnakeHead() {
-  DrawRectangle(snake.pos_x * BODY_WIDTH, snake.pos_y * BODY_HEIGHT, BODY_WIDTH,
-                BODY_HEIGHT, BROWN);
+  DrawRectangle(snake.pos_x * CELL_WIDTH, snake.pos_y * CELL_HEIGHT, CELL_WIDTH,
+                CELL_HEIGHT, BROWN);
 }
 
 void DrawSnake() {
@@ -79,20 +104,39 @@ void DrawSnake() {
   DrawSnakeHead();
 }
 
+void DrawFood() {
+  int dw = (CELL_WIDTH - EAT_WIDTH) / 2;
+  int dh = (CELL_HEIGHT - EAT_HEIGHT) / 2;
+  DrawRectangle(food.x * CELL_WIDTH + dw, food.y * CELL_HEIGHT + dh, EAT_HEIGHT,
+                EAT_WIDTH, MAROON);
+}
+
+void CheckFood() {
+  if (snake.pos_x == food.x && snake.pos_y == food.y) {
+    snake.length++;
+    snake.has_eaten=true;
+    SpawnFood();
+  }
+}
+
 void MoveSnake() {
   // TODO: move snake smooooothly
   snake.last_step_updated_at += GetFrameTime();
   if (snake.last_step_updated_at >= snake.speed) {
-    snake.last_step_updated_at =0;
+    snake.last_step_updated_at = 0;
     // TODO: do -snake.speed but inside a loop
   } else {
     return;
   }
 
-  for (int i = 0; i < FIELD_WIDTH; i++) {
-    for (int j = 0; j < FIELD_HEIGHT; j++) {
-      if (snake_body[i][j].lifetime > 0) {
-        snake_body[i][j].lifetime--;
+  if (snake.has_eaten) {
+    snake.has_eaten = false;
+  } else {
+    for (int i = 0; i < FIELD_WIDTH; i++) {
+      for (int j = 0; j < FIELD_HEIGHT; j++) {
+        if (snake_body[i][j].lifetime > 0) {
+          snake_body[i][j].lifetime--;
+        }
       }
     }
   }
@@ -121,6 +165,7 @@ void MoveSnake() {
 }
 
 void Draw() {
+  DrawFood();
   DrawSnake();
 }
 
@@ -145,6 +190,7 @@ void ControlSnake() {
 
 void Update() {
   MoveSnake();
+  CheckFood();
   ControlSnake();
 }
 
