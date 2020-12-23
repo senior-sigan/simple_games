@@ -1,8 +1,17 @@
+/**
+ * SNAKE GAME!!
+ *
+ * TODO:
+ * - add walls
+ * - show score on game over screen
+ * - add different rooms with walls configurations
+ * - add second type of food
+ */
+
 #include <math.h>
 #include <raylib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #define CANVAS_WIDTH 240
 #define CANVAS_HEIGHT 136
