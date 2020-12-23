@@ -6,3 +6,4 @@ set(BUILD_GAMES OFF CACHE BOOL "Build the example games.")
 add_subdirectory(vendor/raylib-3.0.0)
 
 add_subdirectory(raylib_test)
+add_subdirectory(snake)
