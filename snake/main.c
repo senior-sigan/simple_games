@@ -26,11 +26,14 @@ typedef struct SnakeNode_ {
 typedef struct Snake_ {
   int dir_x;  // 1 - right, -1 - left, 0 - nowhere
   int dir_y;  // 1 - up , -1 - down, 0 - nowhere
+  int next_dir_x;
+  int next_dir_y;
   int length;
   int pos_x;
   int pos_y;
   float speed;                 // in seconds till next movement
   float last_step_updated_at;  // time since last step update
+  bool has_changed_dir;
   bool has_eaten;
 } Snake;
 
@@ -39,17 +42,11 @@ typedef struct Food_ {
   int y;
 } Food;
 
+bool is_game_over = false;
 Food food = {-1, -1};
 // Eat eat_super = {-1, -1};
 SnakeNode snake_body[FIELD_WIDTH][FIELD_HEIGHT];
-Snake snake = {.dir_x = 1,
-               .dir_y = 0,
-               .length = 2,
-               .pos_x = FIELD_WIDTH / 2,
-               .pos_y = FIELD_HEIGHT / 2,
-               .speed = 0.2f,
-               .last_step_updated_at = 0,
-               .has_eaten = false};
+Snake snake;
 
 void InitSnake() {
   for (int i = 0; i < snake.length; i++) {
@@ -72,6 +69,17 @@ void SpawnFood() {
 }
 
 void Setup() {
+  snake.dir_x = 1;
+  snake.dir_y = 0;
+  snake.next_dir_x = 1;
+  snake.next_dir_y = 0;
+  snake.length = 2;
+  snake.pos_x = FIELD_WIDTH / 2;
+  snake.pos_y = FIELD_HEIGHT / 2;
+  snake.speed = 0.2f;
+  snake.last_step_updated_at = 0;
+  snake.has_eaten = false;
+  is_game_over = false;
   for (int i = 0; i < FIELD_WIDTH; i++) {
     for (int j = 0; j < FIELD_HEIGHT; j++) {
       snake_body[i][j].lifetime = 0;
@@ -114,8 +122,14 @@ void DrawFood() {
 void CheckFood() {
   if (snake.pos_x == food.x && snake.pos_y == food.y) {
     snake.length++;
-    snake.has_eaten=true;
+    snake.has_eaten = true;
     SpawnFood();
+  }
+}
+
+void CheckPopka() {
+  if (snake_body[snake.pos_x][snake.pos_y].lifetime > 0) {
+    is_game_over = true;
   }
 }
 
@@ -141,54 +155,69 @@ void MoveSnake() {
     }
   }
 
+  snake.dir_x = snake.next_dir_x;
+  snake.dir_y = snake.next_dir_y;
   snake.pos_x += snake.dir_x;
   snake.pos_y += snake.dir_y;
 
   if (snake.pos_x >= FIELD_WIDTH) {
     snake.pos_x = 0;
-    // TODO: check bite popka
   }
   if (snake.pos_x < 0) {
     snake.pos_x = FIELD_WIDTH - 1;
-    // TODO: check bite popka
   }
   if (snake.pos_y >= FIELD_HEIGHT) {
     snake.pos_y = 0;
-    // TODO: check bite popka
   }
   if (snake.pos_y < 0) {
     snake.pos_y = FIELD_HEIGHT - 1;
-    // TODO: check bite popka
   }
 
+  CheckPopka();
   snake_body[snake.pos_x][snake.pos_y].lifetime = snake.length;
 }
 
 void Draw() {
   DrawFood();
   DrawSnake();
+
+  if (is_game_over) {
+    DrawText("POTRACHENO", 2, CANVAS_HEIGHT / 2, 20, MAGENTA);
+    DrawText("PRESS F TO RESTART", 2, CANVAS_HEIGHT / 2 + 20, 12, MAGENTA);
+  }
 }
 
 void ControlSnake() {
   if ((snake.dir_y == 0) && (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))) {
-    snake.dir_y = 1;
-    snake.dir_x = 0;
+    snake.next_dir_y = -1;
+    snake.next_dir_x = 0;
+    return;
   }
   if ((snake.dir_y == 0) && (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))) {
-    snake.dir_y = -1;
-    snake.dir_x = 0;
+    snake.next_dir_y = 1;
+    snake.next_dir_x = 0;
+    return;
   }
   if ((snake.dir_x == 0) && (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A))) {
-    snake.dir_y = 0;
-    snake.dir_x = -1;
+    snake.next_dir_y = 0;
+    snake.next_dir_x = -1;
+    return;
   }
   if ((snake.dir_x == 0) && (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D))) {
-    snake.dir_y = 0;
-    snake.dir_x = 1;
+    snake.next_dir_y = 0;
+    snake.next_dir_x = 1;
+    return;
   }
 }
 
 void Update() {
+  if (is_game_over) {
+    if (IsKeyPressed(KEY_F)) {
+      Setup();
+    }
+    return;
+  }
+
   MoveSnake();
   CheckFood();
   ControlSnake();
@@ -206,10 +235,10 @@ int main() {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(CANVAS_WIDTH * 2, CANVAS_HEIGHT * 2, "Snake");
   SetTargetFPS(30);
-
+  SetTextureFilter(GetFontDefault().texture, FILTER_POINT);
   RenderTexture2D canvas = LoadRenderTexture(CANVAS_WIDTH, CANVAS_HEIGHT);
   Rectangle canvas_field = {0, 0, (float)canvas.texture.width,
-                            (float)canvas.texture.height};
+                            -(float)canvas.texture.height};
   SetTextureFilter(canvas.texture, FILTER_POINT);
 
   Setup();
