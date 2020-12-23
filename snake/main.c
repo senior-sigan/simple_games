@@ -42,11 +42,17 @@ typedef struct Food_ {
   int y;
 } Food;
 
+void GoToMenu();
+void GoToGame();
+
 bool is_game_over = false;
 Food food = {-1, -1};
 // Eat eat_super = {-1, -1};
 SnakeNode snake_body[FIELD_WIDTH][FIELD_HEIGHT];
 Snake snake;
+
+void (*Draw)(void);
+void (*Update)(void);
 
 void InitSnake() {
   for (int i = 0; i < snake.length; i++) {
@@ -76,7 +82,6 @@ void Setup() {
   snake.length = 2;
   snake.pos_x = FIELD_WIDTH / 2;
   snake.pos_y = FIELD_HEIGHT / 2;
-  snake.speed = 0.2f;
   snake.last_step_updated_at = 0;
   snake.has_eaten = false;
   is_game_over = false;
@@ -177,7 +182,7 @@ void MoveSnake() {
   snake_body[snake.pos_x][snake.pos_y].lifetime = snake.length;
 }
 
-void Draw() {
+void DrawGame() {
   DrawFood();
   DrawSnake();
 
@@ -210,11 +215,15 @@ void ControlSnake() {
   }
 }
 
-void Update() {
+void UpdateGame() {
   if (is_game_over) {
     if (IsKeyPressed(KEY_F)) {
-      Setup();
+      GoToMenu();
     }
+    return;
+  }
+  if (IsKeyPressed(KEY_R)) {
+    GoToMenu();
     return;
   }
 
@@ -231,6 +240,39 @@ Rectangle GetCanvasTarget() {
   return rec;
 }
 
+void DrawMenu() {
+  DrawText("SELECT DIFFICULTY", 4, 4, 20, MAGENTA);
+  DrawText("press key", 4, 20, 12, MAGENTA);
+  DrawText("A", 4, 32, 20, DARKBROWN);
+  DrawText("B", 32, 32, 40, DARKBROWN);
+  DrawText("C", 98, 32, 60, DARKBROWN);
+}
+
+void UpdateMenu() {
+  if (IsKeyPressed(KEY_A)) {
+    snake.speed = 0.2f;
+  } else if (IsKeyPressed(KEY_B)) {
+    snake.speed = 0.1f;
+  } else if (IsKeyPressed(KEY_C)) {
+    snake.speed = 0.05f;
+  } else {
+    return;
+  }
+
+  GoToGame();
+}
+
+void GoToMenu() {
+  Draw = DrawMenu;
+  Update = UpdateMenu;
+}
+
+void GoToGame() {
+  Draw = DrawGame;
+  Update = UpdateGame;
+  Setup();
+}
+
 int main() {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(CANVAS_WIDTH * 2, CANVAS_HEIGHT * 2, "Snake");
@@ -242,6 +284,8 @@ int main() {
   SetTextureFilter(canvas.texture, FILTER_POINT);
 
   Setup();
+  Draw = DrawMenu;
+  Update = UpdateMenu;
   while (!WindowShouldClose()) {
     BeginDrawing();
     ClearBackground(GREEN);
