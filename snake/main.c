@@ -13,19 +13,24 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#if defined(PLATFORM_WEB)
+#include <emscripten/emscripten.h>
+#endif
+
 #define CANVAS_WIDTH 240
 #define CANVAS_HEIGHT 136
 
 #define CELL_WIDTH 10   // in pixels
 #define CELL_HEIGHT 10  // in pixels
 
-const int EAT_WIDTH = 6;
-const int EAT_HEIGHT = 6;
+#define EAT_WIDTH 6
+#define EAT_HEIGHT 6
 
-const int FIELD_WIDTH = CANVAS_WIDTH / CELL_WIDTH;
-const int FIELD_HEIGHT = CANVAS_HEIGHT / CELL_HEIGHT;
+#define FIELD_WIDTH (CANVAS_WIDTH / CELL_WIDTH)
+#define FIELD_HEIGHT (CANVAS_HEIGHT / CELL_HEIGHT)
 
 const Vector2 ZERO_VEC = {0, 0};
+RenderTexture2D canvas;
 
 typedef struct SnakeNode_ {
   int32_t lifetime;
@@ -282,33 +287,42 @@ void GoToGame() {
   Setup();
 }
 
+void GameLoop() {
+  BeginDrawing();
+  ClearBackground(GREEN);
+
+  BeginTextureMode(canvas);
+  ClearBackground(BLACK);
+  Draw();
+  EndTextureMode();
+
+  Rectangle canvas_field = {0, 0, (float)canvas.texture.width,
+                            -(float)canvas.texture.height};
+  DrawTexturePro(canvas.texture, canvas_field, GetCanvasTarget(), ZERO_VEC,
+                 0.0f, WHITE);
+  EndDrawing();
+  Update();
+}
+
 int main() {
   SetConfigFlags(FLAG_WINDOW_RESIZABLE);
   InitWindow(CANVAS_WIDTH * 2, CANVAS_HEIGHT * 2, "Snake");
   SetTargetFPS(30);
   SetTextureFilter(GetFontDefault().texture, FILTER_POINT);
-  RenderTexture2D canvas = LoadRenderTexture(CANVAS_WIDTH, CANVAS_HEIGHT);
-  Rectangle canvas_field = {0, 0, (float)canvas.texture.width,
-                            -(float)canvas.texture.height};
+  canvas = LoadRenderTexture(CANVAS_WIDTH, CANVAS_HEIGHT);
   SetTextureFilter(canvas.texture, FILTER_POINT);
 
   Setup();
   Draw = DrawMenu;
   Update = UpdateMenu;
+
+#if defined(PLATFORM_WEB)
+  emscripten_set_main_loop(GameLoop, 0, 1);
+#else
   while (!WindowShouldClose()) {
-    BeginDrawing();
-    ClearBackground(GREEN);
-
-    BeginTextureMode(canvas);
-    ClearBackground(BLACK);
-    Draw();
-    EndTextureMode();
-
-    DrawTexturePro(canvas.texture, canvas_field, GetCanvasTarget(), ZERO_VEC,
-                   0.0f, WHITE);
-    EndDrawing();
-    Update();
+    GameLoop();
   }
+#endif
 
   CloseWindow();
 
