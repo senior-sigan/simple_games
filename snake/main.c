@@ -172,6 +172,12 @@ void CheckFood() {
   }
 }
 
+void CheckCollisionWithWall() {
+  if (LVL[snake.pos_y][snake.pos_x] > 0) {
+    is_game_over = true;
+  }
+}
+
 void CheckPopka() {
   if (snake_body[snake.pos_x][snake.pos_y].lifetime > 0) {
     is_game_over = true;
@@ -219,6 +225,7 @@ void MoveSnake() {
   }
 
   CheckPopka();
+  CheckCollisionWithWall();
   snake_body[snake.pos_x][snake.pos_y].lifetime = snake.length;
 }
 
