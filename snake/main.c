@@ -2,10 +2,9 @@
  * SNAKE GAME!!
  *
  * TODO:
- * - add walls
- * - add different rooms with walls configurations
  * - show score on game over screen
  * - add second type of food
+ * - add timeout before snake starts moving
  */
 
 #include <math.h>
@@ -29,7 +28,33 @@
 #define FIELD_WIDTH 24   // (CANVAS_WIDTH / CELL_WIDTH)
 #define FIELD_HEIGHT 12  // (CANVAS_HEIGHT / CELL_HEIGHT)
 
-const short LVL[FIELD_HEIGHT][FIELD_WIDTH] = {
+#define LVL_COUNT 5
+
+#define COOL_DOWN_BEFORE_START 1 // in seconds
+
+float cool_down = 0;
+
+typedef struct Coordinates_ {
+  int x;
+  int y;
+} Coordinates;
+
+const short LVL[LVL_COUNT][FIELD_HEIGHT][FIELD_WIDTH] = {
+    // LVL 0
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  // LVL 1
+
     1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -41,7 +66,63 @@ const short LVL[FIELD_HEIGHT][FIELD_WIDTH] = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1};
+    1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+
+    // LVL 2
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+    // LVL 3
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+    // LVL 4
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+    0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+    0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+const Coordinates SNAKE_SPAWNS[LVL_COUNT] = {
+    {6,6},
+    {6,6},
+    {16,4},
+    {4,0},
+    {4,0},
+};
+
+const int DIFFICULTY_COUNT = 3;
+const char* const DIFFICULTY_NAMES[] = {"SPEED: SLOWPOKE", "SPEED: JUST OK", "SPEED: MAMBA"};
+const float DIFFICULTY_SPEEDS[] = {0.2f, 0.1f, 0.05f};
+int difficulty = 0;
 
 const Vector2 ZERO_VEC = {0, 0};
 RenderTexture2D canvas;
@@ -70,9 +151,10 @@ typedef struct Food_ {
   int y;
 } Food;
 
-void GoToMenu();
+void GoToSelectLevel();
 void GoToGame();
 
+int current_lvl = 0;
 bool is_game_over = false;
 Food food = {-1, -1};
 // Eat eat_super = {-1, -1};
@@ -97,21 +179,24 @@ void SpawnFood() {
   do {
     x = GetRandomValue(0, FIELD_WIDTH - 1);
     y = GetRandomValue(0, FIELD_HEIGHT - 1);
-  } while (snake_body[x][y].lifetime > 0);
+  } while (snake_body[x][y].lifetime > 0 || LVL[current_lvl][y][x] > 0);
+  TraceLog(LOG_INFO, "Spawn food at [%d,%d]", x, y);
   food.x = x;
   food.y = y;
 }
 
 void Setup() {
+  cool_down = 0;
   snake.dir_x = 1;
   snake.dir_y = 0;
   snake.next_dir_x = 1;
   snake.next_dir_y = 0;
   snake.length = 2;
-  snake.pos_x = FIELD_WIDTH / 2;
-  snake.pos_y = FIELD_HEIGHT / 2;
+  snake.pos_x = SNAKE_SPAWNS[current_lvl].x;
+  snake.pos_y = SNAKE_SPAWNS[current_lvl].y;
   snake.last_step_updated_at = 0;
   snake.has_eaten = false;
+  snake.speed = DIFFICULTY_SPEEDS[difficulty];
   is_game_over = false;
   for (int i = 0; i < FIELD_WIDTH; i++) {
     for (int j = 0; j < FIELD_HEIGHT; j++) {
@@ -125,7 +210,7 @@ void Setup() {
 }
 
 void DrawWallBody(int i, int j) {
-  if (LVL[j][i] == 0) {
+  if (LVL[current_lvl][j][i] == 0) {
     return;
   }
 
@@ -173,7 +258,7 @@ void CheckFood() {
 }
 
 void CheckCollisionWithWall() {
-  if (LVL[snake.pos_y][snake.pos_x] > 0) {
+  if (LVL[current_lvl][snake.pos_y][snake.pos_x] > 0) {
     is_game_over = true;
   }
 }
@@ -265,12 +350,29 @@ void ControlSnake() {
 void UpdateGame() {
   if (is_game_over) {
     if (IsKeyPressed(KEY_F)) {
-      GoToMenu();
+      GoToSelectLevel();
     }
     return;
   }
   if (IsKeyPressed(KEY_R)) {
-    GoToMenu();
+    GoToSelectLevel();
+    return;
+  }
+
+  // TODO: REMOVE CHEAT CODE!
+  if (IsKeyPressed(KEY_ENTER)) {
+    cool_down = 0;
+    current_lvl++;
+    if (current_lvl < 0) {
+      current_lvl = LVL_COUNT - 1;
+    }
+    if (current_lvl >= LVL_COUNT) {
+      current_lvl = 0;
+    }
+  }
+
+  if (cool_down < COOL_DOWN_BEFORE_START) {
+    cool_down += GetFrameTime();
     return;
   }
 
@@ -287,37 +389,59 @@ Rectangle GetCanvasTarget() {
   return rec;
 }
 
-void DrawMenu() {
-  DrawText("SELECT DIFFICULTY", 4, 4, 20, MAGENTA);
-  DrawText("press key", 4, 20, 12, MAGENTA);
-  DrawText("A", 4, 32, 20, DARKBROWN);
-  DrawText("B", 32, 32, 40, DARKBROWN);
-  DrawText("C", 98, 32, 60, DARKBROWN);
-}
-
-void UpdateMenu() {
-  if (IsKeyPressed(KEY_A)) {
-    snake.speed = 0.2f;
-  } else if (IsKeyPressed(KEY_B)) {
-    snake.speed = 0.1f;
-  } else if (IsKeyPressed(KEY_C)) {
-    snake.speed = 0.05f;
-  } else {
-    return;
-  }
-
-  GoToGame();
-}
-
-void GoToMenu() {
-  Draw = DrawMenu;
-  Update = UpdateMenu;
-}
-
 void GoToGame() {
   Draw = DrawGame;
   Update = UpdateGame;
   Setup();
+}
+
+void DrawSelectLevel() {
+  DrawText("LEVEL: ", 4, 4, 20, MAGENTA);
+  DrawText("press UP or Down", 4, 24, 12, MAGENTA);
+
+  char buffer[3];  // max num is 99
+  sprintf(buffer, "%d", current_lvl);
+  DrawText(buffer, 84, 4, 20, MAGENTA);
+
+  DrawText(DIFFICULTY_NAMES[difficulty], 4, 42, 20, MAGENTA);
+  DrawText("press LEFT or RIGHT", 4, 62, 12, MAGENTA);
+
+  DrawText("Press Enter to start", 4, 92, 12, MAGENTA);
+}
+
+void UpdateSelectLevel() {
+  if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W)) {
+    current_lvl--;
+  } else if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S)) {
+    current_lvl++;
+  }
+  if (current_lvl < 0) {
+    current_lvl = LVL_COUNT - 1;
+  }
+  if (current_lvl >= LVL_COUNT) {
+    current_lvl = 0;
+  }
+
+  if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A)) {
+    difficulty--;
+  } else if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D)) {
+    difficulty++;
+  }
+  if (difficulty < 0) {
+    difficulty = DIFFICULTY_COUNT - 1;
+  }
+  if (difficulty >= DIFFICULTY_COUNT) {
+    difficulty = 0;
+  }
+
+  if (IsKeyPressed(KEY_ENTER)) {
+    GoToGame();
+  }
+}
+
+void GoToSelectLevel() {
+  Draw = DrawSelectLevel;
+  Update = UpdateSelectLevel;
 }
 
 void GameLoop() {
@@ -346,8 +470,7 @@ int main() {
   SetTextureFilter(canvas.texture, FILTER_POINT);
 
   Setup();
-  Draw = DrawMenu;
-  Update = UpdateMenu;
+  GoToSelectLevel();
 
 #if defined(PLATFORM_WEB)
   emscripten_set_main_loop(GameLoop, 0, 1);
