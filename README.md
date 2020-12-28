@@ -2,14 +2,14 @@
 
 The goal is to implement all games from the golden age of arcade video games. And some games from the Modern age :).
 
-- [ ] Snake
+- [x] Snake
+- [ ] Minesweeper
 - [ ] Pong
 - [ ] Lunar Lander
 - [ ] Asteroids
 - [ ] Frog
 - [ ] Space Invaders
 - [ ] Pac Man
-- [ ] Minesweeper
 - [ ] Tetris
 
 ## Live coding streams
