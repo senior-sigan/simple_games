@@ -30,7 +30,7 @@
 
 #define LVL_COUNT 5
 
-#define COOL_DOWN_BEFORE_START 1 // in seconds
+#define COOL_DOWN_BEFORE_START 1  // in seconds
 
 float cool_down = 0;
 
@@ -39,6 +39,7 @@ typedef struct Coordinates_ {
   int y;
 } Coordinates;
 
+// @formatter:off
 const short LVL[LVL_COUNT][FIELD_HEIGHT][FIELD_WIDTH] = {
     // LVL 0
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -110,17 +111,15 @@ const short LVL[LVL_COUNT][FIELD_HEIGHT][FIELD_WIDTH] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
+// @formatter:on
 
 const Coordinates SNAKE_SPAWNS[LVL_COUNT] = {
-    {6,6},
-    {6,6},
-    {16,4},
-    {4,0},
-    {4,0},
+    {6, 6}, {6, 6}, {16, 4}, {4, 0}, {4, 0},
 };
 
 const int DIFFICULTY_COUNT = 3;
-const char* const DIFFICULTY_NAMES[] = {"SPEED: SLOWPOKE", "SPEED: JUST OK", "SPEED: MAMBA"};
+const char* const DIFFICULTY_NAMES[] = {"SPEED: SLOWPOKE", "SPEED: JUST OK",
+                                        "SPEED: MAMBA"};
 const float DIFFICULTY_SPEEDS[] = {0.2f, 0.1f, 0.05f};
 int difficulty = 0;
 
