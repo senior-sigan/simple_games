@@ -3,8 +3,8 @@
  *
  * TODO:
  * - add walls
- * - show score on game over screen
  * - add different rooms with walls configurations
+ * - show score on game over screen
  * - add second type of food
  */
 
@@ -18,7 +18,7 @@
 #endif
 
 #define CANVAS_WIDTH 240
-#define CANVAS_HEIGHT 136
+#define CANVAS_HEIGHT 120
 
 #define CELL_WIDTH 10   // in pixels
 #define CELL_HEIGHT 10  // in pixels
@@ -26,8 +26,22 @@
 #define EAT_WIDTH 6
 #define EAT_HEIGHT 6
 
-#define FIELD_WIDTH (CANVAS_WIDTH / CELL_WIDTH)
-#define FIELD_HEIGHT (CANVAS_HEIGHT / CELL_HEIGHT)
+#define FIELD_WIDTH 24   // (CANVAS_WIDTH / CELL_WIDTH)
+#define FIELD_HEIGHT 12  // (CANVAS_HEIGHT / CELL_HEIGHT)
+
+const short LVL[FIELD_HEIGHT][FIELD_WIDTH] = {
+    1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1};
 
 const Vector2 ZERO_VEC = {0, 0};
 RenderTexture2D canvas;
@@ -110,7 +124,20 @@ void Setup() {
   SpawnFood();
 }
 
+void DrawWallBody(int i, int j) {
+  if (LVL[j][i] == 0) {
+    return;
+  }
+
+  DrawRectangle(i * CELL_WIDTH, j * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT,
+                WHITE);
+}
+
 void DrawSnakeBody(int i, int j) {
+  if (snake_body[i][j].lifetime < 1) {
+    return;
+  }
+
   DrawRectangle(i * CELL_WIDTH, j * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT,
                 DARKBROWN);
 }
@@ -120,12 +147,11 @@ void DrawSnakeHead() {
                 CELL_HEIGHT, BROWN);
 }
 
-void DrawSnake() {
+void DrawGameMatrix() {
   for (int i = 0; i < FIELD_WIDTH; i++) {
     for (int j = 0; j < FIELD_HEIGHT; j++) {
-      if (snake_body[i][j].lifetime > 0) {
-        DrawSnakeBody(i, j);
-      }
+      DrawSnakeBody(i, j);
+      DrawWallBody(i, j);
     }
   }
   DrawSnakeHead();
@@ -198,7 +224,7 @@ void MoveSnake() {
 
 void DrawGame() {
   DrawFood();
-  DrawSnake();
+  DrawGameMatrix();
 
   if (is_game_over) {
     DrawText("POTRACHENO", 2, CANVAS_HEIGHT / 2, 20, MAGENTA);
