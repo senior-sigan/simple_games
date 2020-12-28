@@ -2,9 +2,11 @@
  * SNAKE GAME!!
  *
  * TODO:
+ * - add score ( speed * food_value )
+ * - show score in the screen header
  * - show score on game over screen
  * - add second type of food
- * - add timeout before snake starts moving
+ * - add story-mode (go to next level after score threshold)
  */
 
 #include <math.h>
