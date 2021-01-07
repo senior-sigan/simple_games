@@ -32,3 +32,4 @@ add_subdirectory(vendor/raylib-3.0.0)
 
 add_subdirectory(raylib_test)
 add_subdirectory(snake)
+add_subdirectory(minesweeper)
