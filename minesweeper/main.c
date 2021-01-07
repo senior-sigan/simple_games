@@ -1,10 +1,12 @@
+#include <assert.h>
 #include <math.h>
 #include <raylib.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-// - отрисовать поле
-// - сгенерировать поле random
+// + отрисовать поле
+// + сгенерировать поле random
+// + возня с мышкой
 // - обрабатывать нажатия левой и правой кнопки мыши
 // - алгоритм открытия только нужных частей поля
 // - обработать БДЫЩЬ когда наступили на мину
@@ -14,7 +16,12 @@
 #define CANVAS_WIDTH 240
 #define CANVAS_HEIGHT 120
 
+#define EMPTY_CELL_MARKER 0
 #define MINE_MARKER -1
+
+#define CLOSED_CELL_MARKER 0
+#define OPENNED_CELL_MARKER 1
+#define FLAG_CELL_MARKER 2
 
 typedef struct Point_ {
   int x;
@@ -28,9 +35,16 @@ int n_cells_height = 0;
 int n_cells_width = 0;
 
 int* field = NULL;
+int* field_state = NULL;
+
+Point mouse;
 
 const Vector2 ZERO_VEC = {0, 0};
 RenderTexture2D canvas;
+
+int Clampi(int value, int lo, int hi) {
+  return value > hi ? hi : value < lo ? lo : value;
+}
 
 Point ToPoint(int pos) {
   Point point;
@@ -136,10 +150,64 @@ void Draw() {
   }
 }
 
+/**
+ * Convert canvas coordinates into field coordinates.
+ * Canvas coords inside [0..CANVAS_WIDTH]..[0..CANVAS_HEIGHT]
+ * Field Coordinates [0..n_cells_width]..[0..n_cells_height]
+ *
+ * @param real_point
+ * @return
+ */
+Point ToFieldCoord(Point real_point) {
+  return real_point;  // fixme
+}
+
 void Update() {
   if (IsKeyPressed(KEY_R)) {
     Setup();
+    return;
   }
+
+  // - взять ячейку по координатам
+  // - это бомба?
+  // - это поле открыто?
+  Point p = ToFieldCoord(mouse);
+  // TODO: skip this mouse pos. It's outside of the field.
+
+  int idx = ToPos(p);
+
+  if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+    if (field[idx] == MINE_MARKER) {
+      // TODO: BUM
+    } else {
+      if (field_state[idx] == OPENNED_CELL_MARKER) {
+        // do nothing
+      } else {
+        // open cells around this cell
+      }
+    }
+  }
+
+  if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON)) {
+    if (field_state[idx] == FLAG_CELL_MARKER) {
+      field_state[idx] = FLAG_CELL_MARKER;
+    } else {
+      field_state[idx] = CLOSED_CELL_MARKER;
+    }
+  }
+}
+
+void TranslateMousePos(Rectangle canvas_target) {
+  mouse.x = GetMouseX();
+  mouse.y = GetMouseY();
+
+  mouse.x = (int)(CANVAS_WIDTH * (float)mouse.x / canvas_target.width -
+                  canvas_target.x);
+  mouse.y = (int)(CANVAS_HEIGHT * (float)mouse.y / canvas_target.height -
+                  canvas_target.y);
+
+  mouse.x = Clampi(mouse.x, 0, CANVAS_WIDTH);
+  mouse.y = Clampi(mouse.y, 0, CANVAS_HEIGHT);
 }
 
 void GameLoop() {
@@ -153,8 +221,10 @@ void GameLoop() {
 
   Rectangle canvas_field = {0, 0, (float)canvas.texture.width,
                             -(float)canvas.texture.height};
-  DrawTexturePro(canvas.texture, canvas_field, GetCanvasTarget(), ZERO_VEC,
-                 0.0f, WHITE);
+  Rectangle canvas_target = GetCanvasTarget();
+  DrawTexturePro(canvas.texture, canvas_field, canvas_target, ZERO_VEC, 0.0f,
+                 WHITE);
+  TranslateMousePos(canvas_target);
   EndDrawing();
   Update();
 }
